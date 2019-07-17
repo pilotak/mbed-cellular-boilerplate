@@ -230,8 +230,6 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
             if (ptr_data->status_data == CellularNetwork::RegisteredHomeNetwork ||
                     ptr_data->status_data == CellularNetwork::RegisteredRoaming ||
                     ptr_data->status_data == CellularNetwork::AlreadyRegistered) {
-                debug("blink led\n");
-
                 if (connection_status == NSAPI_STATUS_DISCONNECTED) {
                     int qid = eQueue.call(mdmReconnect);
 
@@ -241,8 +239,6 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
                 }
 
             } else {
-                debug("blink off\n");
-
                 if (connection_status != NSAPI_STATUS_CONNECTING) {
                     mdmCb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_DISCONNECTED);
                 }
