@@ -1,0 +1,29 @@
+{
+	"macros": [
+		"MDM_TX_pin=PD_5",
+		"MDM_RX_pin=PD_6",
+		"MDM_RTS_pin=PD_4",
+		"MDM_CTS_pin=PD_3",
+		"MDM_RST_pin=PD_2",
+		"MDM_PRWON_pin=PD_1",
+		"APN=\"internet\"",
+		"SIM_PIN=\"0000\""
+	],
+	"target_overrides": {
+		"*": {
+			"platform.error-all-threads-info": true,
+			"platform.error-filename-capture-enabled": true,
+			"platform.fatal-error-auto-reboot-enabled": true,
+			"platform.stdio-convert-newlines": true,
+			"platform.stdio-baud-rate": 115200,
+			"cellular.use-apn-lookup": false,
+			"target.network-default-interface-type": "CELLULAR",
+			"mbed-trace.enable": false,
+			"cellular.debug-at": false
+		},
+		"NUCLEO_F412ZG": {
+			"target.stdio_uart_tx": "PG_14",
+			"target.stdio_uart_rx": "PG_9"
+		}
+	}
+}
