@@ -30,8 +30,9 @@ int mdm_connect_id = 0;
 int server_connect_id = 0;
 nsapi_connection_status_t connection_status = NSAPI_STATUS_DISCONNECTED;
 
-#include "server.h"
 bool  mdmSetup();
+void mdmConnect();
+#include "server.h"
 
 class myUblox : public UBLOX_AT {
   public:
@@ -100,13 +101,13 @@ void mdmDisconnect() {
     mdm->disconnect();
 }
 
-bool mdmConnect() {
+void mdmConnect() {
     debug("MDM connect\n");
     nsapi_error_t ret = mdm->connect();
 
     if (ret == NSAPI_ERROR_OK || ret == NSAPI_ERROR_IN_PROGRESS) {
         mdm_connect_id = 0;
-        return true;
+        return;
     }
 
     debug("Setup connect error: %i\n", ret);
@@ -116,22 +117,18 @@ bool mdmConnect() {
         NVIC_SystemReset();
     }
 
-    return false;
+    debug("Connecting failed: %i\n", ret);
+    mdm_connect_id = eQueue.call_in(5000, mdmConnect);
+
+    if (!mdm_connect_id) {
+        debug("Calling mdm connect failed, no memory\n");
+    }
 }
 
 void mdmReconnect() {
     if (!mdm_connect_id) {
         debug("Reconnecting network\n");
-        bool status = mdmConnect();
-
-        if (!status) {
-            debug("Reconnecting failed\n");
-            mdm_connect_id = eQueue.call_in(5000, mdmConnect);
-
-            if (!mdm_connect_id) {
-                debug("Calling mdm connect failed, no memory\n");
-            }
-        }
+        mdmConnect();
 
     } else {
         debug("mdm connect in progress\n");
@@ -239,17 +236,12 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
         debug("Connection status: %i\n", ptr);
 
         if (connection_status != ptr) {
-            int qid = -1;
-
             if (ptr == NSAPI_STATUS_GLOBAL_UP) {
-                qid = eQueue.call(serverReconnect);
+                int qid = eQueue.call(serverReconnect);
 
-            } else if (ptr == NSAPI_STATUS_DISCONNECTED) {
-                qid = eQueue.call(serverDisconnect);
-            }
-
-            if (!qid) {
-                debug("Calling server connect failed, no memory\n");
+                if (!qid) {
+                    debug("Calling server connect failed, no memory\n");
+                }
             }
         }
 
