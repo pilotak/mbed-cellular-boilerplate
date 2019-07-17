@@ -30,6 +30,7 @@ int mdm_connect_id = 0;
 int server_connect_id = 0;
 nsapi_connection_status_t connection_status = NSAPI_STATUS_DISCONNECTED;
 
+#include "server.h"
 bool  mdmSetup();
 
 class myUblox : public UBLOX_AT {
@@ -92,35 +93,6 @@ CellularDevice *CellularDevice::get_target_default_instance() {
 
     static myUblox device(&serial);
     return &device;
-}
-
-void serverDisconnect() {
-    debug("Server disconnected\n");
-}
-
-bool serverConnect() {
-    debug("Server connect\n");
-    server_connect_id = 0;
-    return true;
-}
-
-void serverReconnect() {
-    if (!server_connect_id) {
-        debug("Reconnecting server\n");
-        bool status = serverConnect();
-
-        if (!status) {
-            debug("Reconnecting failed\n");
-            server_connect_id = eQueue.call_in(5000, serverConnect);
-
-            if (!server_connect_id) {
-                debug("Calling server connect failed, no memory\n");
-            }
-        }
-
-    } else {
-        debug("server connect in progress\n");
-    }
 }
 
 void mdmDisconnect() {
@@ -296,7 +268,7 @@ bool mdmSetup() {
             mdm_device->hard_power_on();
 
             uint16_t timeout[8] = {1, 2, 4, 8, 16, 32, 64, 128};
-            mdm_device->set_retry_timeout_array(timeout, 5);
+            mdm_device->set_retry_timeout_array(timeout, 8);
 
             mdm->set_credentials(MBED_CONF_APP_APN);
 
