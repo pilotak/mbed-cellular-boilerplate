@@ -29,6 +29,7 @@ CellularDevice *mdm_device;
 int mdm_connect_id = 0;
 int server_connect_id = 0;
 nsapi_connection_status_t connection_status = NSAPI_STATUS_DISCONNECTED;
+uint8_t registration_status = CellularNetwork::StatusNotAvailable;
 
 bool  mdmSetup();
 void mdmConnect();
@@ -194,22 +195,25 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
             debug("SIM: %i\n", static_cast<int>(ptr_data->status_data));
 
         } else if (event == CellularRegistrationStatusChanged && ptr_data->error == NSAPI_ERROR_OK) {
-            debug("Registration: %i\n", ptr_data->status_data);
+            if (registration_status != ptr_data->status_data && ptr_data->status_data != CellularNetwork::StatusNotAvailable) {
+                debug("Registration: %i\n", ptr_data->status_data);
+                registration_status = ptr_data->status_data;
 
-            if (ptr_data->status_data == CellularNetwork::RegisteredHomeNetwork ||
-                    ptr_data->status_data == CellularNetwork::RegisteredRoaming ||
-                    ptr_data->status_data == CellularNetwork::AlreadyRegistered) {
-                if (connection_status == NSAPI_STATUS_DISCONNECTED) {
-                    int qid = eQueue.call(mdmReconnect);
+                if (registration_status == CellularNetwork::RegisteredHomeNetwork ||
+                        registration_status == CellularNetwork::RegisteredRoaming ||
+                        registration_status == CellularNetwork::AlreadyRegistered) {
+                    if (connection_status == NSAPI_STATUS_DISCONNECTED) {
+                        int qid = eQueue.call(mdmReconnect);
 
-                    if (!qid) {
-                        debug("Calling mdm connect failed, no memory\n");
+                        if (!qid) {
+                            debug("Calling mdm connect failed, no memory\n");
+                        }
                     }
-                }
 
-            } else {
-                if (connection_status != NSAPI_STATUS_CONNECTING) {
-                    mdmCb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_DISCONNECTED);
+                } else {
+                    if (connection_status != NSAPI_STATUS_CONNECTING) {
+                        mdmCb(NSAPI_EVENT_CONNECTION_STATUS_CHANGE, NSAPI_STATUS_DISCONNECTED);
+                    }
                 }
             }
 
