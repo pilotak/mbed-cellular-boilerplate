@@ -125,7 +125,8 @@ bool mdmConnect() {
     debug("Setup connect error: %i\n", ret);
 
     if (ret == NSAPI_ERROR_NO_MEMORY) {
-        debug("No memory\n");
+        debug("No memory, reseting MCU\n");
+        NVIC_SystemReset();
     }
 
     return false;
@@ -286,10 +287,10 @@ bool mdmSetup() {
             uint16_t timeout[8] = {1, 2, 4, 8, 16, 32, 64, 128};
             mdm_device->set_retry_timeout_array(timeout, 5);
 
-            mdm->set_credentials(APN);
+            mdm->set_credentials(MBED_CONF_APP_APN);
 
-#if defined(SIM_PIN)
-            mdm->set_sim_pin(SIM_PIN);
+#if defined(MBED_CONF_APP_SIM_PIN)
+            mdm->set_sim_pin(MBED_CONF_APP_SIM_PIN);
 #endif
 
             mdm->attach(&mdmCb);
