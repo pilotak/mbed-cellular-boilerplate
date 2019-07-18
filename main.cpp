@@ -34,6 +34,7 @@ uint8_t registration_status = CellularNetwork::StatusNotAvailable;
 bool  mdmSetup();
 void mdmConnect();
 #include "server.h"
+#include "sms.h"
 
 class myUblox : public UBLOX_AT {
   public:
@@ -106,19 +107,21 @@ void mdmConnect() {
     debug("MDM connect\n");
     nsapi_error_t ret = mdm->connect();
 
+    debug("Connection: %i\n", ret);
+
     if (ret == NSAPI_ERROR_OK || ret == NSAPI_ERROR_IN_PROGRESS) {
+        debug("Network connected\n");
         mdm_connect_id = 0;
         return;
     }
 
-    debug("Setup connect error: %i\n", ret);
 
     if (ret == NSAPI_ERROR_NO_MEMORY) {
         debug("No memory, reseting MCU\n");
         NVIC_SystemReset();
     }
 
-    debug("Connecting failed: %i\n", ret);
+    debug("Connecting failed\n");
     mdm_connect_id = eQueue.call_in(5000, mdmConnect);
 
     if (!mdm_connect_id) {
@@ -245,6 +248,12 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
 
                 if (!qid) {
                     debug("Calling server connect failed, no memory\n");
+                }
+
+                qid = eQueue.call_in(5000, smsSetup);
+
+                if (!qid) {
+                    debug("Calling SMS failed, no memory\n");
                 }
             }
         }
