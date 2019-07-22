@@ -69,5 +69,11 @@ void smsSetup() {
         } else {
             debug("SMS open failed\n");
         }
+
+        int qid = eQueue.call_in(5000, smsSetup);
+
+        if (!qid) {
+            debug("Calling SMS failed, no memory\n");
+        }
     }
 }
