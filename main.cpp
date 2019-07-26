@@ -52,7 +52,7 @@ class myUblox : public UBLOX_AT {
 
 myUblox::myUblox(FileHandle *fh) :
     UBLOX_AT(fh),
-    pwrOn(MDM_PRWON_pin, 0),
+    pwrOn(MDM_PWRON_pin, 0),
     rst(MDM_RST_pin, 1) {
 }
 
