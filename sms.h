@@ -47,7 +47,7 @@ void smsRead() {
 
 void smsSetup() {
     if (!sms_done) {
-        LOG_DEBUG_MDM("SMS setup\n");
+        debug("SMS setup\n");
 
         CellularSMS *sms;
         sms = mdm_device->open_sms();

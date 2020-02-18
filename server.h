@@ -29,13 +29,16 @@ bool serverConnect() {
 
                 if (ret >= NSAPI_ERROR_OK) {
                     debug("TCP: Sent %i Bytes\n", ret);
-                    int n = socket.recv((void*) recv_buf, sizeof(recv_buf));
+                    nsapi_size_or_error_t n = socket.recv((void*) recv_buf, sizeof(recv_buf));
 
                     socket.close();
 
                     if (n > 0) {
                         debug("Received from echo server %i bytes\n", n);
                         return true;
+
+                    } else {
+                        debug("Socket recv FAILED: %i\n", n);
                     }
 
                 } else {
