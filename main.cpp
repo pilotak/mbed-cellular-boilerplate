@@ -1,5 +1,5 @@
 /*
-Copyright 2019 Pavel Slama
+Copyright 2020 Pavel Slama
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -86,7 +86,7 @@ nsapi_error_t myUblox::soft_power_off() {
 }
 
 CellularDevice *CellularDevice::get_target_default_instance() {
-    static UARTSerial serial(MDM_TX_pin, MDM_RX_pin, 115200);
+    static BufferedSerial serial(MDM_TX_pin, MDM_RX_pin, 115200);
 
 #if defined(MDM_HW_FLOW)
     serial.set_flow_control(SerialBase::RTSCTS, MDM_RTS_pin, MDM_CTS_pin);
@@ -114,7 +114,6 @@ void mdmConnect() {
         mdm_connect_id = 0;
         return;
     }
-
 
     if (ret == NSAPI_ERROR_NO_MEMORY) {
         debug("No memory, reseting MCU\n");
@@ -160,7 +159,6 @@ void mdmOff() {
     at_cmd->cmd_start("AT+CPWROFF");
     at_cmd->cmd_stop();
     at_cmd->unlock();
-    mdm_device->release_at_handler(at_cmd);
 
     int qid = eQueue.call_in(5000, mdmHardOff);
 
@@ -281,7 +279,7 @@ bool mdmSetup() {
             mdm->set_sim_pin(MBED_CONF_APP_SIM_PIN);
 #endif
 
-            mdm->attach(&mdmCb);
+            mdm->attach(mdmCb);
             mdm->set_blocking(false);
 
             mdmReconnect();
@@ -302,6 +300,12 @@ bool mdmSetup() {
 
 #if MBED_CONF_MBED_TRACE_ENABLE
 static Mutex trace_mutex;
+static char time_st[50];
+
+static char* trace_time(size_t ss) {
+    snprintf(time_st, 49, "[%08llums]", Kernel::get_ms_count());
+    return time_st;
+}
 
 static void trace_wait() {
     trace_mutex.lock();
@@ -313,6 +317,7 @@ static void trace_release() {
 
 void trace_init() {
     mbed_trace_init();
+    mbed_trace_prefix_function_set(&trace_time);
 
     mbed_trace_mutex_wait_function_set(trace_wait);
     mbed_trace_mutex_release_function_set(trace_release);
@@ -336,6 +341,6 @@ int main() {
     mdmSetup();
 
     while (1) {
-
+        ThisThread::sleep_for(osWaitForever);
     }
 }

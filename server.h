@@ -4,8 +4,56 @@ void serverDisconnect() {
 
 bool serverConnect() {
     debug("Server connect\n");
+
     server_connect_id = 0;
-    return true;
+    nsapi_error_t ret = NSAPI_ERROR_PARAMETER;
+    TCPSocket socket;
+    const char *echo_string = "TEST";
+    char recv_buf[4];
+
+    SocketAddress server;
+    ret = mdm->gethostbyname("echo.mbedcloudtesting.com", &server);
+
+    if (ret == NSAPI_ERROR_OK) {
+        server.set_port(7);
+        ret = socket.open(mdm);
+
+        if (ret == NSAPI_ERROR_OK) {
+            debug("open OK\n");
+
+            ret = socket.connect(server);
+
+            if (ret == NSAPI_ERROR_OK || ret == NSAPI_ERROR_IS_CONNECTED) {
+                debug("connected\n");
+                ret = socket.send((void*) echo_string, strlen(echo_string));
+
+                if (ret >= NSAPI_ERROR_OK) {
+                    debug("TCP: Sent %i Bytes\n", ret);
+                    int n = socket.recv((void*) recv_buf, sizeof(recv_buf));
+
+                    socket.close();
+
+                    if (n > 0) {
+                        debug("Received from echo server %i bytes\n", n);
+                        return true;
+                    }
+
+                } else {
+                    debug("Socket send FAILED: %i\n", ret);
+                }
+
+            } else {
+                debug("connect FAILED: %i\n", ret);
+            }
+
+        } else {
+            debug("open FAILED\n");
+        }
+
+    } else {
+        printf("Couldn't resolve remote host, code: %d\n", ret);
+        return false;
+    }
 }
 
 void serverReconnect() {

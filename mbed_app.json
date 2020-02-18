@@ -24,8 +24,10 @@
             "platform.stdio-baud-rate": 115200,
             "cellular.use-apn-lookup": false,
             "target.network-default-interface-type": "CELLULAR",
-            "mbed-trace.enable": false,
-            "cellular.debug-at": false
+            "mbed-trace.enable": true,
+            "cellular.debug-at": true,
+            "cellular.use-sms": true,
+            "drivers.uart-serial-rxbuf-size": 2048
         },
         "NUCLEO_F412ZG": {
             "target.stdio_uart_tx": "PG_14",
