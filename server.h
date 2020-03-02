@@ -1,15 +1,11 @@
-void serverDisconnect() {
-    debug("Server disconnected\n");
-}
+bool server_done = false;
 
 bool serverConnect() {
     debug("Server connect\n");
 
-    server_connect_id = 0;
     nsapi_error_t ret = NSAPI_ERROR_PARAMETER;
     TCPSocket socket;
-    const char *echo_string = "TEST";
-    char recv_buf[4];
+    char buffer[] = "TEST";
 
     SocketAddress server;
     ret = mdm->gethostbyname("echo.mbedcloudtesting.com", &server);
@@ -25,16 +21,17 @@ bool serverConnect() {
 
             if (ret == NSAPI_ERROR_OK || ret == NSAPI_ERROR_IS_CONNECTED) {
                 debug("connected\n");
-                ret = socket.send((void*) echo_string, strlen(echo_string));
+                ret = socket.send(buffer, sizeof(buffer));
 
                 if (ret >= NSAPI_ERROR_OK) {
                     debug("TCP: Sent %i Bytes\n", ret);
-                    nsapi_size_or_error_t n = socket.recv((void*) recv_buf, sizeof(recv_buf));
+                    memset(buffer, 0, sizeof(buffer));
+                    nsapi_size_or_error_t n = socket.recv(buffer, sizeof(buffer));
 
                     socket.close();
 
-                    if (n > 0) {
-                        debug("Received from echo server %i bytes\n", n);
+                    if (n == sizeof(buffer)) {
+                        debug("Received from echo server %i bytes: %.*s\n", n, sizeof(buffer), buffer);
                         return true;
 
                     } else {
@@ -55,8 +52,9 @@ bool serverConnect() {
 
     } else {
         printf("Couldn't resolve remote host, code: %d\n", ret);
-        return false;
     }
+
+    return false;
 }
 
 void serverReconnect() {
@@ -71,6 +69,9 @@ void serverReconnect() {
             if (!server_connect_id) {
                 debug("Calling server connect failed, no memory\n");
             }
+
+        } else {
+            server_done = true;
         }
 
     } else {

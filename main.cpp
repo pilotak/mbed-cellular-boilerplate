@@ -22,19 +22,23 @@ limitations under the License.
     #include "CellularLog.h"
 #endif
 
+DigitalOut lt(PB_1, 1);
+DigitalOut led(KL15_STATUS_LED_pin, 0);
 EventQueue eQueue(32 * EVENTS_EVENT_SIZE);
 CellularContext *mdm;
 CellularDevice *mdm_device;
 
-int mdm_connect_id = 0;
-int server_connect_id = 0;
 nsapi_connection_status_t connection_status = NSAPI_STATUS_DISCONNECTED;
 uint8_t registration_status = CellularNetwork::StatusNotAvailable;
+int mdm_connect_id = 0;
+int server_connect_id = 0;
 
-bool  mdmSetup();
-void mdmConnect();
+void mdmCb(nsapi_event_t type, intptr_t ptr);
+
 #include "server.h"
 #include "sms.h"
+
+#define MDM_HW_FLOW
 
 class myUblox : public UBLOX_AT {
   public:
@@ -98,11 +102,6 @@ CellularDevice *CellularDevice::get_target_default_instance() {
     return &device;
 }
 
-void mdmDisconnect() {
-    debug("Disconnecting from network\n");
-    mdm->disconnect();
-}
-
 void mdmConnect() {
     debug("MDM connect\n");
     nsapi_error_t ret = mdm->connect();
@@ -138,39 +137,55 @@ void mdmReconnect() {
     }
 }
 
-void mdmHardOff() {
-    mdm_device->soft_power_off();
-    mdm_device->hard_power_off();
-    // mdm_device->stop();
+bool mdmSetup() {
+    debug("Device setup\n");
+    mdm = CellularContext::get_default_instance();
+
+    if (mdm != NULL) {
+        mdm_device = mdm->get_device();
+
+        if (mdm_device != NULL) {
+            mdm_device->hard_power_on();
+
+            uint16_t timeout[7] = {1, 4, 8, 16, 32, 64, 128};
+            mdm_device->set_retry_timeout_array(timeout, 7);
+
+            mdm->set_credentials("internet");
+
+            mdm->attach(mdmCb);
+            mdm->set_blocking(false);
+
+            mdmReconnect();
+
+            return true;
+
+        } else {
+            debug("No interface\n");
+        }
+
+    } else {
+        debug("No device\n");
+    }
+
+    return false;
 }
 
 void mdmOffHelper() {
     mdm->attach(NULL);
-    mdmDisconnect();
+    mdm->set_blocking(true);
+    mdm->disconnect();
     mdm_device->shutdown();
 }
 
 void mdmOff() {
     debug("Turning OFF\n");
     mdmOffHelper();
-
-    ATHandler *at_cmd = mdm_device->get_at_handler();
-    at_cmd->lock();
-    at_cmd->cmd_start("AT+CPWROFF");
-    at_cmd->cmd_stop();
-    at_cmd->unlock();
-
-    int qid = eQueue.call_in(5000, mdmHardOff);
-
-    if (!qid) {
-        debug("Could turn off mdm\n");
-    }
 }
 
 void mdmReset() {
     debug("Reseting MDM\n");
     mdmOffHelper();
-    mdmHardOff();
+    mdm_device->hard_power_off();
 
     int qid = eQueue.call_in(5000, mdmSetup);
 
@@ -204,11 +219,7 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
                         registration_status == CellularNetwork::RegisteredRoaming ||
                         registration_status == CellularNetwork::AlreadyRegistered) {
                     if (connection_status == NSAPI_STATUS_DISCONNECTED) {
-                        int qid = eQueue.call(mdmReconnect);
-
-                        if (!qid) {
-                            debug("Calling mdm connect failed, no memory\n");
-                        }
+                        debug("Disconnect\n");
                     }
 
                 } else {
@@ -248,7 +259,7 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
                     debug("Calling server connect failed, no memory\n");
                 }
 
-                qid = eQueue.call_in(5000, smsSetup);
+                qid = eQueue.call(smsSetup);
 
                 if (!qid) {
                     debug("Calling SMS failed, no memory\n");
@@ -258,43 +269,6 @@ void mdmCb(nsapi_event_t type, intptr_t ptr) {
 
         connection_status = (nsapi_connection_status_t)ptr;
     }
-}
-
-bool mdmSetup() {
-    debug("Device setup\n");
-    mdm = CellularContext::get_default_instance();
-
-    if (mdm != NULL) {
-        mdm_device = mdm->get_device();
-
-        if (mdm_device != NULL) {
-            mdm_device->hard_power_on();
-
-            uint16_t timeout[8] = {1, 2, 4, 8, 16, 32, 64, 128};
-            mdm_device->set_retry_timeout_array(timeout, 8);
-
-            mdm->set_credentials(MBED_CONF_APP_APN);
-
-#if defined(MBED_CONF_APP_SIM_PIN)
-            mdm->set_sim_pin(MBED_CONF_APP_SIM_PIN);
-#endif
-
-            mdm->attach(mdmCb);
-            mdm->set_blocking(false);
-
-            mdmReconnect();
-
-            return true;
-
-        } else {
-            debug("No interface\n");
-        }
-
-    } else {
-        debug("No device\n");
-    }
-
-    return false;
 }
 
 
@@ -341,6 +315,15 @@ int main() {
     mdmSetup();
 
     while (1) {
-        ThisThread::sleep_for(osWaitForever);
+        ThisThread::sleep_for(500);
+        led = !led;
+
+        if (server_done && sms_done) {
+            mdmOff();
+            break;
+        }
     }
+
+    debug("End\n");
+    return 0;
 }

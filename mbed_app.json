@@ -5,16 +5,13 @@
         },
         "sim-pin": {
             "value": null
+        },
+        "trace-level": {
+            "help": "Options are TRACE_LEVEL_ERROR,TRACE_LEVEL_WARN,TRACE_LEVEL_INFO,TRACE_LEVEL_DEBUG",
+            "macro_name": "MBED_TRACE_MAX_LEVEL",
+            "value": "TRACE_LEVEL_DEBUG"
         }
     },
-    "macros": [
-        "MDM_TX_pin=PD_5",
-        "MDM_RX_pin=PD_6",
-        "MDM_RTS_pin=PD_4",
-        "MDM_CTS_pin=PD_3",
-        "MDM_RST_pin=PD_2",
-        "MDM_PWRON_pin=PD_1"
-    ],
     "target_overrides": {
         "*": {
             "platform.error-all-threads-info": true,
@@ -28,10 +25,6 @@
             "cellular.debug-at": true,
             "cellular.use-sms": true,
             "drivers.uart-serial-rxbuf-size": 2048
-        },
-        "NUCLEO_F412ZG": {
-            "target.stdio_uart_tx": "PG_14",
-            "target.stdio_uart_rx": "PG_9"
         }
     }
 }
