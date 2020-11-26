@@ -1,4 +1,5 @@
 bool server_done = false;
+int server_connect_id = 0;
 
 bool serverConnect() {
     debug("Server connect\n");
@@ -64,7 +65,7 @@ void serverReconnect() {
 
         if (!status) {
             debug("Reconnecting failed\n");
-            server_connect_id = eQueue.call_in(5000, serverConnect);
+            server_connect_id = eQueue.call_in(5s, serverConnect);
 
             if (!server_connect_id) {
                 debug("Calling server connect failed, no memory\n");

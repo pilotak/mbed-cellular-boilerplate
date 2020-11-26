@@ -74,7 +74,7 @@ void smsSetup() {
         debug("SMS open failed\n");
     }
 
-    int qid = eQueue.call_in(5000, smsSetup);
+    int qid = eQueue.call_in(5s, smsSetup);
 
     if (!qid) {
         debug("Calling SMS failed, no memory\n");

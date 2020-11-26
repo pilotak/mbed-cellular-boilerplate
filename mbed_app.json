@@ -1,30 +1,33 @@
 {
-    "config": {
-        "apn": {
-            "value": "\"internet\""
-        },
-        "sim-pin": {
-            "value": null
-        },
-        "trace-level": {
-            "help": "Options are TRACE_LEVEL_ERROR,TRACE_LEVEL_WARN,TRACE_LEVEL_INFO,TRACE_LEVEL_DEBUG",
-            "macro_name": "MBED_TRACE_MAX_LEVEL",
-            "value": "TRACE_LEVEL_DEBUG"
-        }
+  "config": {
+    "apn": {
+      "value": "\"internet\""
     },
-    "target_overrides": {
-        "*": {
-            "platform.error-all-threads-info": true,
-            "platform.error-filename-capture-enabled": true,
-            "platform.fatal-error-auto-reboot-enabled": true,
-            "platform.stdio-convert-newlines": true,
-            "platform.stdio-baud-rate": 115200,
-            "cellular.use-apn-lookup": false,
-            "target.network-default-interface-type": "CELLULAR",
-            "mbed-trace.enable": true,
-            "cellular.debug-at": true,
-            "cellular.use-sms": true,
-            "drivers.uart-serial-rxbuf-size": 2048
-        }
+    "sim-pin": {
+      "value": null
+    },
+    "trace-level": {
+      "help": "Options are TRACE_LEVEL_ERROR,TRACE_LEVEL_WARN,TRACE_LEVEL_INFO,TRACE_LEVEL_DEBUG",
+      "macro_name": "MBED_TRACE_MAX_LEVEL",
+      "value": "TRACE_LEVEL_DEBUG"
     }
+  },
+  "target_overrides": {
+    "*": {
+      "platform.error-all-threads-info": true,
+      "platform.error-filename-capture-enabled": true,
+      "platform.fatal-error-auto-reboot-enabled": true,
+      "platform.stdio-convert-newlines": true,
+      "platform.stdio-baud-rate": 115200,
+      "platform.callback-nontrivial": true,
+      "mbed-trace.enable": true,
+      "cellular.debug-at": false,
+      "cellular.use-sms": true,
+      "cellular.clear-on-connect": null,
+      "cellular.use-apn-lookup": false,
+      "drivers.uart-serial-rxbuf-size": 2048,
+      "drivers.uart-serial-txbuf-size": 256,
+      "target.printf_lib": "std"
+    }
+  }
 }
